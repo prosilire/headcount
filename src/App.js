@@ -469,11 +469,67 @@ function HouseholdBlock({ household, onToggleAll, onTogglePerson, onEditHousehol
   );
 }
 
+// ── Install Banner ────────────────────────────────────────────────────────────
+const BANNER_DISMISSED_KEY = "headcount_banner_dismissed";
+
+function useShowInstallBanner() {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem(BANNER_DISMISSED_KEY)) return;
+    const isStandalone =
+      window.navigator.standalone === true ||
+      window.matchMedia("(display-mode: standalone)").matches;
+    if (isStandalone) return;
+    const t = setTimeout(() => setShow(true), 1500);
+    return () => clearTimeout(t);
+  }, []);
+
+  function dismiss() {
+    localStorage.setItem(BANNER_DISMISSED_KEY, "1");
+    setShow(false);
+  }
+
+  return [show, dismiss];
+}
+
+function InstallBanner({ onDismiss }) {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  return (
+    <div style={{
+      position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200,
+      background: "#2C1A0E", padding: "14px 16px 20px",
+      display: "flex", alignItems: "flex-start", gap: 12,
+      boxShadow: "0 -4px 24px rgba(0,0,0,0.25)",
+      animation: "slideUp 0.3s ease",
+    }}>
+      <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
+      <div style={{ fontSize: 24, flexShrink: 0, marginTop: 2 }}>🍽️</div>
+      <div style={{ flex: 1 }}>
+        <p style={{ fontSize: 14, fontWeight: 700, color: "#F5EDE1", margin: "0 0 4px", fontFamily: "inherit" }}>
+          Add Headcount to your Home Screen
+        </p>
+        <p style={{ fontSize: 12, color: "#C4A882", margin: 0, lineHeight: 1.5, fontFamily: "inherit" }}>
+          {isIOS
+            ? <>Tap the share icon <strong style={{ color: "#F5EDE1" }}>⎙</strong> then <strong style={{ color: "#F5EDE1" }}>"Add to Home Screen"</strong></>
+            : <>Tap your browser menu and choose <strong style={{ color: "#F5EDE1" }}>"Add to Home Screen"</strong></>
+          }
+        </p>
+      </div>
+      <button onClick={onDismiss} style={{
+        background: "none", border: "none", color: "#8B6A55",
+        fontSize: 22, cursor: "pointer", lineHeight: 1, flexShrink: 0, padding: 0,
+      }}>×</button>
+    </div>
+  );
+}
+
 // ── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
   const [households, setHouseholds] = useState(() => load() || DEFAULT_HOUSEHOLDS);
   const [modal, setModal] = useState(null);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [showBanner, dismissBanner] = useShowInstallBanner();
   const importRef = useRef();
 
   // persist on every change
@@ -589,6 +645,11 @@ export default function App() {
           onImport={handleWelcomeImport}
           onDismiss={() => setShowWelcome(false)}
         />
+      )}
+
+      {/* Install nudge banner */}
+      {showBanner && !showWelcome && (
+        <InstallBanner onDismiss={dismissBanner} />
       )}
 
       {/* Header */}
