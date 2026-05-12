@@ -392,6 +392,8 @@ function HouseholdBlock({ household, onToggleAll, onTogglePerson, onEditHousehol
         draggable
         onDragStart={() => hhDrag.onDragStart()}
         onDragEnter={() => hhDrag.onDragEnter()}
+        onDragOver={e => e.preventDefault()}
+        onDrop={e => { e.preventDefault(); hhDrag.onDrop(); }}
         onDragEnd={() => hhDrag.onDragEnd()}
         style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -693,7 +695,8 @@ export default function App() {
             hhDrag={{
               onDragStart: () => { hhDragIdx.current = i; },
               onDragEnter: () => { hhDragOverIdx.current = i; },
-              onDragEnd: reorderHouseholds,
+              onDragEnd: () => { hhDragIdx.current = null; hhDragOverIdx.current = null; },
+              onDrop: reorderHouseholds,
             }}
           />
         ))}
